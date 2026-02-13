@@ -1,4 +1,6 @@
 from collections import defaultdict
+from datetime import date
+import datetime
 from typing import overload
 from rich import box
 from rich.console import Group, RenderableType
@@ -59,6 +61,7 @@ class Task(Base):
     priority: Mapped[Priority]
     tag: Mapped[str] = mapped_column(default='')
     status: Mapped[Status] = mapped_column(default=Status.TO_DO)
+    due_date: Mapped[date | None]
     board_id: Mapped[int | None] = mapped_column(
         ForeignKey('boards.id', ondelete='CASCADE'))
 
@@ -79,8 +82,22 @@ class Task(Base):
         if self.tag:
             content += f' ([cyan]{self.tag}[/])'
 
+        if self.due_date:
+            today = date.today()
+
+            if self.status == Status.COMPLETED or self.due_date > today:
+                due_colour = 'default'
+            elif self.due_date == today:
+                due_colour = 'yellow'
+            else:
+                due_colour = 'red'
+            subtitle = f'[{due_colour}]{self.due_date}[/]'
+        else:
+            subtitle = None
+
         return Panel(content, title=str(self.id), title_align='left',
-                     border_style=STATUS_COLOURS[self.status])
+                     border_style=STATUS_COLOURS[self.status],
+                     subtitle=subtitle, subtitle_align='right')
 
     @overload
     def update(self, *, title: str | None = None,

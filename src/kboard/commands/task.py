@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 import typer
@@ -16,8 +17,9 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         priority: Annotated[Priority, typer.Option(
             '--priority', '-p', help='Task priority.')] = Priority.NORMAL,
         tag: Annotated[str | None, typer.Option(
-            '--tag', '-t', help='Task custom tag.',
-        )] = None,
+            '--tag', '-t', help='Task custom tag.',)] = None,
+        due_date: Annotated[datetime | None, typer.Option(
+            '--due', '-d', help='Task due date.', formats=['%Y-%m-%d'])] = None,
         board_id: Annotated[int | None, typer.Option(
             '--board', '-b', help='Board ID to assign to the task.')] = None):
     """Add a new task.
@@ -33,7 +35,8 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         else:
             board = None
 
-        task = Task(title=title, priority=priority, tag=tag, board=board)
+        task = Task(title=title, priority=priority, tag=tag, due_date=due_date,
+                    board=board)
 
         session.add(task)
         session.commit()
@@ -48,8 +51,9 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
          priority: Annotated[Priority | None, typer.Option(
              '--priority', '-p', help='New task priority.')] = None,
          tag: Annotated[str | None, typer.Option(
-             '--tag', '-t', help='Task custom tag.',
-         )] = None,
+             '--tag', '-t', help='Task custom tag.')] = None,
+         due_date: Annotated[datetime | None, typer.Option(
+             '--due', '-d', help='Task due date.', formats=['%Y-%m-%d'])] = None,
          board_id: Annotated[int | None, typer.Option(
         '-b', '--board', help='New board ID (use -1 to unasign).')] = None):
     """Edit existing task attributes.
@@ -62,7 +66,8 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
         if not task:
             return error('Task not found.')
 
-        new_attrs = {'title': title, 'priority': priority, 'tag': tag}
+        new_attrs = {'title': title, 'priority': priority,
+                     'due_date': due_date, 'tag': tag}
         task.update(**new_attrs)
 
         if board_id is not None:

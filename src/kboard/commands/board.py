@@ -115,4 +115,4 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
                                                Task.status == Status.COMPLETED))
             session.commit()
 
-            success('Deleted completed tasks.')
+            print(board)

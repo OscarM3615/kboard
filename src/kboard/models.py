@@ -48,7 +48,7 @@ class Board(Base):
         return table
 
     def inline(self) -> RenderableType:
-        return f'\\[[cyan]{self.id}[/]] {self.name}'
+        return f'\\[[cyan]{self.id}[/]] {self.name} ({len(self.tasks)})'
 
 
 class Task(Base):

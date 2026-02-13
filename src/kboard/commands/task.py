@@ -3,9 +3,9 @@ from typing import Annotated
 import typer
 from sqlalchemy.orm import Session
 
-from ..config import STATUS_NAMES, engine
+from ..config import engine
 from ..models import Board, Priority, Status, Task
-from ..utils import error, success
+from ..utils import error, print_result_board
 
 
 app = typer.Typer(name='task', help='Manage tasks.', no_args_is_help=True)
@@ -38,7 +38,7 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         session.add(task)
         session.commit()
 
-        success(f'Created task with ID {task.id}.')
+        print_result_board(board)
 
 
 @app.command()
@@ -77,7 +77,7 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
 
         session.commit()
 
-        success(f'Updated task "{task.title}" attributes.')
+        print_result_board(task.board)
 
 
 @app.command()
@@ -103,8 +103,7 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
 
         session.commit()
 
-        success(
-            f'Moved task "{task.title}" to [cyan]{STATUS_NAMES[task.status]}[/].')
+        print_result_board(task.board)
 
 
 @app.command()
@@ -124,7 +123,9 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
             if not task:
                 return error('Task not found.')
 
+            board = task.board
+
             session.delete(task)
             session.commit()
 
-            success(f'Deleted task with ID {task.id}.')
+            print_result_board(board)

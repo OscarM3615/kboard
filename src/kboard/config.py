@@ -3,10 +3,10 @@ from pathlib import Path
 
 from sqlalchemy import create_engine
 
-from .enums import Priority, Status
+from .enums import Status
 
 
-DB_PATH = Path(os.environ.get('KBOARD_HOME', Path.home())) / 'kboard.db'
+DB_PATH = Path(os.environ.get('KBOARD_HOME', Path.home())) / '.kboard.db'
 
 STATUS_NAMES: dict[Status, str] = {
     Status.TO_DO: 'To do',

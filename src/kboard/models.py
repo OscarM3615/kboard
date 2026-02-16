@@ -50,7 +50,9 @@ class Board(Base):
         return table
 
     def inline(self) -> RenderableType:
-        return f'\\[[cyan]{self.id}[/]] {self.name} ({len(self.tasks)})'
+        count = len([t for t in self.tasks if t.status != Status.COMPLETED])
+
+        return f'\\[[cyan]{self.id}[/]] {self.name} ({count})'
 
 
 class Task(Base):

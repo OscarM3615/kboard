@@ -1,7 +1,6 @@
 import typer
 
-from ..config import engine
-from ..models import Base
+from ..db.init import init_db
 from ..utils import success
 
 
@@ -12,6 +11,6 @@ app = typer.Typer()
 def configure():
     """Create and initialise data file.
     """
-    Base.metadata.create_all(engine)
+    init_db()
 
     success('Data file created successfully.')

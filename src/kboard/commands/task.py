@@ -4,9 +4,15 @@ from typing import Annotated
 import typer
 from sqlalchemy.orm import Session
 
-from ..config import engine
-from ..models import Board, Priority, Status, Task
-from ..utils import error, print_result_board
+from ..console import console
+from ..db.engine import engine
+from ..exceptions import BoardNotFoundError, TaskNotFoundError
+from ..models import Priority
+from ..repos.board_repo import BoardRepository
+from ..repos.task_repo import TaskRepository
+from ..services.task_service import TaskService
+from ..utils import error
+from ..views import BoardRenderer
 
 
 app = typer.Typer(name='task', help='Manage tasks.', no_args_is_help=True)
@@ -27,21 +33,24 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
     The task can be preassigned to a board using the --board option.
     """
     with Session(engine) as session:
-        if board_id:
-            board = session.get(Board, board_id)
+        task_repo = TaskRepository(session)
+        board_repo = BoardRepository(session)
+        service = TaskService(task_repo, board_repo)
 
-            if not board:
-                return error('Board not found.')
-        else:
-            board = None
-
-        task = Task(title=title, priority=priority, tag=tag, due_date=due_date,
-                    board=board)
+        try:
+            task = service.add_task(title, priority, tag, due_date, board_id)
+        except BoardNotFoundError:
+            return error('Board not found.')
 
         session.add(task)
         session.commit()
 
-        print_result_board(board)
+        if task.board:
+            console.print(BoardRenderer.to_kanban(task.board))
+        else:
+            backlog = service.get_backlog()
+            console.print(BoardRenderer.kanban_from_tasks('Backlog',
+                                                          list(backlog)))
 
 
 @app.command()
@@ -61,28 +70,25 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
     All parameters and options from the `add` command are optional here.
     """
     with Session(engine) as session:
-        task = session.get(Task, id)
+        task_repo = TaskRepository(session)
+        board_repo = BoardRepository(session)
+        service = TaskService(task_repo, board_repo)
 
-        if not task:
+        try:
+            task = service.edit_task(id, title, priority, tag, due_date,
+                                     board_id)
+            session.commit()
+        except TaskNotFoundError:
             return error('Task not found.')
+        except BoardNotFoundError:
+            return error('Board not found.')
 
-        new_attrs = {'title': title, 'priority': priority,
-                     'due_date': due_date, 'tag': tag}
-        task.update(**new_attrs)
-
-        if board_id is not None:
-            if board_id != -1:
-                board = session.get(Board, board_id)
-
-                if not board:
-                    return error('Board not found.')
-            else:
-                board = None
-            task.board = board
-
-        session.commit()
-
-        print_result_board(task.board)
+        if task.board:
+            console.print(BoardRenderer.to_kanban(task.board))
+        else:
+            backlog = service.get_backlog()
+            console.print(BoardRenderer.kanban_from_tasks('Backlog',
+                                                          list(backlog)))
 
 
 @app.command()
@@ -96,19 +102,24 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
     To move a task backwards the steps must be negative.
     """
     with Session(engine) as session:
-        task = session.get(Task, id)
-
-        if not task:
-            return error('Task not found.')
+        task_repo = TaskRepository(session)
+        board_repo = BoardRepository(session)
+        service = TaskService(task_repo, board_repo)
 
         try:
-            task.status = Status(task.status + steps)
+            task = service.move_task(id, steps)
+            session.commit()
+        except TaskNotFoundError:
+            return error('Task not found.')
         except ValueError:
             return error(f'Unable to move {steps} step(s).')
 
-        session.commit()
-
-        print_result_board(task.board)
+        if task.board:
+            console.print(BoardRenderer.to_kanban(task.board))
+        else:
+            backlog = service.get_backlog()
+            console.print(BoardRenderer.kanban_from_tasks('Backlog',
+                                                          list(backlog)))
 
 
 @app.command()
@@ -121,16 +132,25 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
 
     If --force is not used, will ask for confirmation.
     """
-    if force:
-        with Session(engine) as session:
-            task = session.get(Task, id)
+    if not force:
+        return
 
-            if not task:
-                return error('Task not found.')
+    with Session(engine) as session:
+        task_repo = TaskRepository(session)
+        board_repo = BoardRepository(session)
+        service = TaskService(task_repo, board_repo)
 
+        try:
+            task = service.delete_task(id)
             board = task.board
-
-            session.delete(task)
             session.commit()
+        except TaskNotFoundError:
+            return error('Task not found.')
 
-            print_result_board(board)
+        if board:
+            console.print(BoardRenderer.to_kanban(board))
+        else:
+            backlog = service.get_backlog()
+            console.print(BoardRenderer.kanban_from_tasks('Backlog',
+                                                          list(backlog)))
+

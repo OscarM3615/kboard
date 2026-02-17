@@ -1,12 +1,14 @@
 from typing import Annotated
 
 import typer
-from rich import print
-from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from ..config import engine
-from ..models import Board, Status, Task
+from ..console import console
+from ..db.engine import engine
+from ..exceptions import BoardNotFoundError
+from ..repos.board_repo import BoardRepository
+from ..repos.task_repo import TaskRepository
+from ..services.board_service import BoardService
 from ..utils import success, error
 from ..views import BoardRenderer
 
@@ -19,19 +21,25 @@ def ls():
     """List existing boards.
     """
     with Session(engine) as session:
-        boards = session.execute(select(Board)).scalars().all()
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
-        print(BoardRenderer.to_list(boards))
+        boards = service.list_boards()
+
+        console.print(BoardRenderer.to_list(boards))
 
 
 @app.command()
 def add(name: Annotated[str, typer.Argument(help='Board name.')]):
     """Create a new board.
     """
-    board = Board(name=name)
-
     with Session(engine) as session:
-        session.add(board)
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
+
+        board = service.create_board(name)
         session.commit()
 
         success(f'Created board "{board.name}" ({board.id}).')
@@ -43,13 +51,15 @@ def rename(id: Annotated[int, typer.Argument(help='Board ID.')],
     """Rename a board.
     """
     with Session(engine) as session:
-        board = session.get(Board, id)
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
-        if not board:
+        try:
+            board = service.rename_board(id, name)
+            session.commit()
+        except BoardNotFoundError:
             return error('Board not found.')
-
-        board.name = name
-        session.commit()
 
         success(f'Renamed board to "{board.name}".')
 
@@ -64,17 +74,21 @@ def rm(id: Annotated[int, typer.Argument(help='Board ID.')],
 
     If --force is not used, will ask for confirmation.
     """
-    if force:
-        with Session(engine) as session:
-            board = session.get(Board, id)
+    if not force:
+        return
 
-            if not board:
-                return error('Board not found.')
+    with Session(engine) as session:
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
-            session.delete(board)
+        try:
+            board = service.delete_board(id)
             session.commit()
+        except BoardNotFoundError:
+            return error('Board not found.')
 
-            success(f'Deleted board "{board.name}".')
+        success(f'Deleted board "{board.name}".')
 
 
 @app.command()
@@ -82,12 +96,16 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
     """Display board and its tasks.
     """
     with Session(engine) as session:
-        board = session.get(Board, id)
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
-        if not board:
+        try:
+            board = service.get_board(id)
+        except BoardNotFoundError:
             return error('Board not found.')
 
-        print(BoardRenderer.to_kanban(board))
+        console.print(BoardRenderer.to_kanban(board))
 
 
 @app.command()
@@ -100,15 +118,18 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
 
     If --force is not used, will ask for confirmation.
     """
-    if force:
-        with Session(engine) as session:
-            board = session.get(Board, id)
+    if not force:
+        return
 
-            if not board:
-                return error('Board not found.')
+    with Session(engine) as session:
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
-            session.execute(delete(Task).where(Task.board_id == board.id,
-                                               Task.status == Status.COMPLETED))
+        try:
+            board = service.clean_completed_tasks(id)
             session.commit()
+        except BoardNotFoundError:
+            return error('Board not found.')
 
-            print(BoardRenderer.to_kanban(board))
+        console.print(BoardRenderer.to_kanban(board))

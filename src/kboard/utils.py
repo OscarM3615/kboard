@@ -1,9 +1,9 @@
+from collections import defaultdict
 from rich import print
 from rich.panel import Panel
 
-from .commands.backlog import backlog
-from .models import Board
-from .views import BoardRenderer
+from .enums import Status
+from .models import Task
 
 
 def success(message: str) -> None:
@@ -21,13 +21,3 @@ def error(message: str) -> None:
     :param message: Message to display.
     """
     print(Panel(message, title='Error', title_align='left', border_style='red'))
-
-def print_result_board(board: Board | None) -> None:
-    """Print the resulting board or fallback to the backlog.
-
-    :param board: board to print
-    """
-    if board:
-        print(BoardRenderer.to_kanban(board))
-    else:
-        backlog()

@@ -21,5 +21,3 @@ STATUS_COLOURS: dict[Status, str] = {
     Status.REVIEW: 'magenta',
     Status.COMPLETED: 'green',
 }
-
-engine = create_engine(f'sqlite:///{DB_PATH}')

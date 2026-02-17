@@ -1,10 +1,11 @@
-from rich import print
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 import typer
 
-from ..config import engine
-from ..models import Board, Task
+from ..console import console
+from ..db.engine import engine
+from ..repos.board_repo import BoardRepository
+from ..repos.task_repo import TaskRepository
+from ..services.task_service import TaskService
 from ..views import BoardRenderer
 
 
@@ -18,9 +19,10 @@ def backlog():
     The backlog is composed of tasks with no assigned board.
     """
     with Session(engine) as session:
-        tasks = session.execute(
-            select(Task).where(Task.board_id.is_(None))).scalars().all()
+        task_repo = TaskRepository(session)
+        board_repo = BoardRepository(session)
+        service = TaskService(task_repo, board_repo)
 
-        board = Board(name='Backlog', tasks=tasks)
+        tasks = service.get_backlog()
 
-        print(BoardRenderer.to_kanban(board))
+        console.print(BoardRenderer.kanban_from_tasks('Backlog', list(tasks)))

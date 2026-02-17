@@ -1,0 +1,6 @@
+class BoardNotFoundError(Exception):
+    ...
+
+
+class TaskNotFoundError(Exception):
+    ...

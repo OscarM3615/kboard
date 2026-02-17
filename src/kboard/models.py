@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import date
 from typing import overload
 from sqlalchemy import ForeignKey
@@ -25,14 +24,6 @@ class Board(Base):
     def active_task_count(self) -> int:
         return sum(1 for t in self.tasks if t.status != Status.COMPLETED)
 
-    def tasks_by_status(self) -> dict[Status, list['Task']]:
-        groups = defaultdict(list)
-
-        for task in self.tasks:
-            groups[task.status].append(task)
-
-        return groups
-
 
 class Task(Base):
     __tablename__ = 'tasks'
@@ -51,7 +42,7 @@ class Task(Base):
     @overload
     def update(self, *, title: str | None = None,
                priority: Priority | None = None, tag: str | None = None,
-               status: Status | None = None) -> None:
+               status: Status | None = None, due_date: date | None) -> None:
         """Update multiple instance attributes in a single call.
 
         To skip a field leave is as ``None``.

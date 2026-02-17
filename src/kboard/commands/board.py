@@ -45,7 +45,8 @@ def add(name: Annotated[str, typer.Argument(help='Board name.')]):
         board = service.create_board(name)
         session.commit()
 
-        console.print(MessageRenderer.success(f'Created board "{board.name}".'))
+        console.print(MessageRenderer.success(
+            f'Created board "{board.name}".'))
 
 
 @app.command(help='Rename a board.')
@@ -92,20 +93,30 @@ def rm(id: Annotated[int, typer.Argument(help='Board ID.')],
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
-        console.print(MessageRenderer.success(f'Deleted board "{board.name}".'))
+        console.print(
+            MessageRenderer.success(f'Deleted board "{board.name}".'))
 
 
 @app.command()
-def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
+def show(board_id: Annotated[int | None, typer.Option(
+        '--board', '-b', help='Board ID.')] = None):
     """Display board and its tasks.
+
+    If no board ID is specified, the app will display all existing boards
+    separated by swimlanes, otherwise only the selected board will be
+    displayed.
     """
     with Session(engine) as session:
         board_repo = BoardRepository(session)
         tasks_repo = TaskRepository(session)
         service = BoardService(board_repo, tasks_repo)
 
+        if board_id is None:
+            boards = service.list_boards()
+            return console.print(BoardRenderer.to_kanban_swimlanes(boards))
+
         try:
-            board = service.get_board(id)
+            board = service.get_board(board_id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 

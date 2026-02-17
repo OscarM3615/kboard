@@ -8,6 +8,7 @@ from rich import box
 from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from .task_renderer import TaskRenderer
 from ..config import STATUS_COLOURS, STATUS_NAMES
@@ -20,13 +21,18 @@ class BoardRenderer:
     """
 
     @staticmethod
-    def _create_base_table(title: str) -> Table:
+    def _create_base_table(title: str, *, board_column: bool = False) -> Table:
         """Generate an empty rich table object.
 
         :param title: table name
+        :param board_column: whether to include board column or not
         :return: table object
         """
-        table = Table(title=title, box=box.DOUBLE, expand=True)
+        table = Table(title=title, box=box.DOUBLE, expand=True,
+                      show_lines=True)
+
+        if board_column:
+            table.add_column('Board')
 
         for s in Status:
             table.add_column(
@@ -65,6 +71,29 @@ class BoardRenderer:
             Group(*(TaskRenderer.to_panel(t) for t in statuses[s]))
             for s in Status
         ])
+
+        return table
+
+    @classmethod
+    def to_kanban_swimlanes(cls, boards: Sequence[Board]) -> Table:
+        """Return a rich table to display a Kanban board from multiple board
+        objects.
+
+        :param boards: list of board objects
+        :return: rich table
+        """
+        table = cls._create_base_table('All active work', board_column=True)
+
+        for board in boards:
+            statuses = cls._group_tasks_by_status(board.tasks)
+
+            table.add_row(
+                Text(f'\n{board.name}', style='cyan', no_wrap=True),
+                *[
+                    Group(*(TaskRenderer.to_panel(t) for t in statuses[s]))
+                    for s in Status
+                ]
+            )
 
         return table
 

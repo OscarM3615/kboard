@@ -1,3 +1,6 @@
+"""Application CLI entry point.
+"""
+
 import typer
 
 from .commands import backlog, board, configure, task

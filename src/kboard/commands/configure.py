@@ -1,3 +1,6 @@
+"""Commands related to app configuration.
+"""
+
 import typer
 
 from ..console import console

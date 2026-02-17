@@ -1,3 +1,6 @@
+"""This module exports the renderer class for board objects and their variants.
+"""
+
 from collections import defaultdict
 from collections.abc import Sequence
 
@@ -13,8 +16,16 @@ from ..models import Board, Task
 
 
 class BoardRenderer:
+    """Class responsible for defining how a board should be displayed.
+    """
+
     @staticmethod
     def _create_base_table(title: str) -> Table:
+        """Generate an empty rich table object.
+
+        :param title: table name
+        :return: table object
+        """
         table = Table(title=title, box=box.DOUBLE, expand=True)
 
         for s in Status:
@@ -27,6 +38,11 @@ class BoardRenderer:
 
     @staticmethod
     def _group_tasks_by_status(tasks: list[Task]) -> dict[Status, list[Task]]:
+        """Return the tasks grouped by status.
+
+        :param tasks: list of tasks to group
+        :return: mapping of status and tasks
+        """
         groups = defaultdict(list)
 
         for task in tasks:
@@ -36,6 +52,11 @@ class BoardRenderer:
 
     @classmethod
     def to_kanban(cls, board: Board) -> Table:
+        """Return a rich table to display a Kanban board from a board object.
+
+        :param board: board object
+        :return: rich table
+        """
         statuses = cls._group_tasks_by_status(board.tasks)
 
         table = cls._create_base_table(board.name)
@@ -49,11 +70,21 @@ class BoardRenderer:
 
     @staticmethod
     def _inline(board: Board) -> str:
+        """Return board data as a single-line string.
+
+        :param board: board object
+        :return: board data
+        """
         return (f'\\[[cyan]{board.id}[/]] {board.name}'
                 f' ({board.active_task_count})')
 
     @classmethod
     def to_list(cls, boards: Sequence[Board]) -> Panel:
+        """Return a rich panel with a list of boards.
+
+        :param boards: list of boards
+        :return: rich panel
+        """
         titles = [cls._inline(b) for b in boards]
 
         return Panel(Group(*titles), title='Boards', title_align='left',
@@ -61,6 +92,12 @@ class BoardRenderer:
 
     @classmethod
     def kanban_from_tasks(cls, title: str, tasks: list['Task']) -> Table:
+        """Generate a rich table to display a Kanban board from a list of tasks.
+
+        :param title: table title
+        :param tasks: list of tasks to include
+        :return: rich table
+        """
         table = cls._create_base_table(title)
         statuses = cls._group_tasks_by_status(tasks)
 

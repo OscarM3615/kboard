@@ -1,3 +1,6 @@
+"""This module exports the renderer class for task objects.
+"""
+
 from datetime import date
 
 from rich.panel import Panel
@@ -8,8 +11,16 @@ from ..models import Task
 
 
 class TaskRenderer:
+    """Class responsible for defining how a task should be displayed.
+    """
+
     @staticmethod
     def _build_subtitle(task: Task) -> str | None:
+        """Helper function to generate the subtitle of a task panel.
+
+        :param task: task object
+        :return: subtitle as string
+        """
         if not task.due_date:
             return None
 
@@ -26,6 +37,11 @@ class TaskRenderer:
 
     @classmethod
     def to_panel(cls, task: Task) -> Panel:
+        """Generate a rich displayable panel representing a Kanban task.
+
+        :param task: task object
+        :return: rich panel
+        """
         content = task.title
 
         if task.priority == Priority.LOW:

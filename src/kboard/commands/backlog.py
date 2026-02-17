@@ -1,3 +1,6 @@
+"""Commands related to the Kanban tasks backlog.
+"""
+
 from sqlalchemy.orm import Session
 import typer
 

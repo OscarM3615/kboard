@@ -1,3 +1,6 @@
+"""This module declares all the database models and their relationships.
+"""
+
 from datetime import date
 from typing import overload
 from sqlalchemy import ForeignKey
@@ -11,6 +14,9 @@ class Base(DeclarativeBase):
 
 
 class Board(Base):
+    """Container for multiple tasks that represents a Kanban board.
+    """
+
     __tablename__ = 'boards'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -22,10 +28,15 @@ class Board(Base):
 
     @property
     def active_task_count(self) -> int:
+        """Count of the tasks in the board that are not completed yet.
+        """
         return sum(1 for t in self.tasks if t.status != Status.COMPLETED)
 
 
 class Task(Base):
+    """Unit of work that can be moved across a board.
+    """
+
     __tablename__ = 'tasks'
 
     id: Mapped[int] = mapped_column(primary_key=True)

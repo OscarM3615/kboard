@@ -1,3 +1,6 @@
+"""Commands responsible for managing boards.
+"""
+
 from typing import Annotated
 
 import typer

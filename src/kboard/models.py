@@ -1,15 +1,9 @@
 from collections import defaultdict
 from datetime import date
-import datetime
 from typing import overload
-from rich import box
-from rich.console import Group, RenderableType
-from rich.panel import Panel
-from rich.table import Table
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from .config import STATUS_COLOURS, STATUS_NAMES
 from .enums import Priority, Status
 
 
@@ -27,32 +21,17 @@ class Board(Base):
                                                cascade='all, delete',
                                                passive_deletes=True)
 
-    def __rich__(self) -> RenderableType:
-        """Display board as a Kanban table.
+    @property
+    def active_task_count(self) -> int:
+        return sum(1 for t in self.tasks if t.status != Status.COMPLETED)
 
-        :return: rich renderable object
-        """
-        statuses = defaultdict(list)
+    def tasks_by_status(self) -> dict[Status, list['Task']]:
+        groups = defaultdict(list)
 
         for task in self.tasks:
-            statuses[task.status].append(task)
+            groups[task.status].append(task)
 
-        table = Table(title=self.name, box=box.DOUBLE, expand=True)
-
-        for s in Status:
-            table.add_column(
-                f'[{STATUS_COLOURS[s]}]{STATUS_NAMES[s]}[/] ({len(statuses[s])})',
-                ratio=1
-            )
-
-        table.add_row(*[Group(*statuses[s]) for s in Status])
-
-        return table
-
-    def inline(self) -> RenderableType:
-        count = len([t for t in self.tasks if t.status != Status.COMPLETED])
-
-        return f'\\[[cyan]{self.id}[/]] {self.name} ({count})'
+        return groups
 
 
 class Task(Base):
@@ -68,38 +47,6 @@ class Task(Base):
         ForeignKey('boards.id', ondelete='CASCADE'))
 
     board: Mapped[Board | None] = relationship(back_populates='tasks')
-
-    def __rich__(self) -> RenderableType:
-        """Display task as a Kanban card.
-
-        :return: rich renderable object
-        """
-        content = self.title
-
-        if self.priority == Priority.LOW:
-            content = f'[bright_black]{content}[/]'
-        elif self.priority == Priority.HIGH:
-            content = f'[yellow]\\[!][/] {content}'
-
-        if self.tag:
-            content += f' ([cyan]{self.tag}[/])'
-
-        if self.due_date:
-            today = date.today()
-
-            if self.status == Status.COMPLETED or self.due_date > today:
-                due_colour = 'default'
-            elif self.due_date == today:
-                due_colour = 'yellow'
-            else:
-                due_colour = 'red'
-            subtitle = f'[{due_colour}]{self.due_date}[/]'
-        else:
-            subtitle = None
-
-        return Panel(content, title=str(self.id), title_align='left',
-                     border_style=STATUS_COLOURS[self.status],
-                     subtitle=subtitle, subtitle_align='right')
 
     @overload
     def update(self, *, title: str | None = None,

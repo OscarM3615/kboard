@@ -2,14 +2,13 @@ from typing import Annotated
 
 import typer
 from rich import print
-from rich.console import Group
-from rich.panel import Panel
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..config import engine
 from ..models import Board, Status, Task
 from ..utils import success, error
+from ..views import BoardRenderer
 
 
 app = typer.Typer(name='board', help='Manage boards.', no_args_is_help=True)
@@ -22,10 +21,7 @@ def ls():
     with Session(engine) as session:
         boards = session.execute(select(Board)).scalars().all()
 
-        titles = [b.inline() for b in boards]
-
-        print(Panel(Group(*titles), title='Boards', title_align='left',
-                    border_style='blue'))
+        print(BoardRenderer.to_list(boards))
 
 
 @app.command()
@@ -91,7 +87,7 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
         if not board:
             return error('Board not found.')
 
-        print(board)
+        print(BoardRenderer.to_kanban(board))
 
 
 @app.command()
@@ -115,4 +111,4 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
                                                Task.status == Status.COMPLETED))
             session.commit()
 
-            print(board)
+            print(BoardRenderer.to_kanban(board))

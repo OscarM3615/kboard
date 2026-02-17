@@ -5,6 +5,7 @@ import typer
 
 from ..config import engine
 from ..models import Board, Task
+from ..views import BoardRenderer
 
 
 app = typer.Typer()
@@ -18,8 +19,8 @@ def backlog():
     """
     with Session(engine) as session:
         tasks = session.execute(
-            select(Task).where(Task.board_id == None)).scalars().all()
+            select(Task).where(Task.board_id.is_(None))).scalars().all()
 
         board = Board(name='Backlog', tasks=tasks)
 
-        print(board)
+        print(BoardRenderer.to_kanban(board))

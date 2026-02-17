@@ -3,6 +3,7 @@ from rich.panel import Panel
 
 from .commands.backlog import backlog
 from .models import Board
+from .views import BoardRenderer
 
 
 def success(message: str) -> None:
@@ -27,6 +28,6 @@ def print_result_board(board: Board | None) -> None:
     :param board: board to print
     """
     if board:
-        print(board)
+        print(BoardRenderer.to_kanban(board))
     else:
         backlog()

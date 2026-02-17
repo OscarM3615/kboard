@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
-
 from .enums import Status
 
 

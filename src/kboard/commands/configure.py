@@ -1,7 +1,8 @@
 import typer
 
+from ..console import console
 from ..db.init import init_db
-from ..utils import success
+from ..renderers.message_renderer import MessageRenderer
 
 
 app = typer.Typer()
@@ -13,4 +14,4 @@ def configure():
     """
     init_db()
 
-    success('Data file created successfully.')
+    console.print(MessageRenderer.success('Data file created successfully.'))

@@ -8,11 +8,11 @@ from ..console import console
 from ..db.engine import engine
 from ..exceptions import BoardNotFoundError, TaskNotFoundError
 from ..models import Priority
+from ..renderers.message_renderer import MessageRenderer
+from ..renderers.board_renderer import BoardRenderer
 from ..repos.board_repo import BoardRepository
 from ..repos.task_repo import TaskRepository
 from ..services.task_service import TaskService
-from ..utils import error
-from ..views import BoardRenderer
 
 
 app = typer.Typer(name='task', help='Manage tasks.', no_args_is_help=True)
@@ -40,7 +40,7 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         try:
             task = service.add_task(title, priority, tag, due_date, board_id)
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
         session.add(task)
         session.commit()
@@ -79,9 +79,9 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
                                      board_id)
             session.commit()
         except TaskNotFoundError:
-            return error('Task not found.')
+            return console.print(MessageRenderer.error('Task not found.'))
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
         if task.board:
             console.print(BoardRenderer.to_kanban(task.board))
@@ -110,9 +110,10 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
             task = service.move_task(id, steps)
             session.commit()
         except TaskNotFoundError:
-            return error('Task not found.')
+            return console.print(MessageRenderer.error('Task not found.'))
         except ValueError:
-            return error(f'Unable to move {steps} step(s).')
+            return console.print(
+                MessageRenderer.error(f'Unable to move {steps} step(s).'))
 
         if task.board:
             console.print(BoardRenderer.to_kanban(task.board))
@@ -145,7 +146,7 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
             board = task.board
             session.commit()
         except TaskNotFoundError:
-            return error('Task not found.')
+            return console.print(MessageRenderer.error('Task not found.'))
 
         if board:
             console.print(BoardRenderer.to_kanban(board))
@@ -153,4 +154,3 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
             backlog = service.get_backlog()
             console.print(BoardRenderer.kanban_from_tasks('Backlog',
                                                           list(backlog)))
-

@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 from ..console import console
 from ..db.engine import engine
 from ..exceptions import BoardNotFoundError
+from ..renderers.board_renderer import BoardRenderer
+from ..renderers.message_renderer import MessageRenderer
 from ..repos.board_repo import BoardRepository
 from ..repos.task_repo import TaskRepository
 from ..services.board_service import BoardService
-from ..utils import success, error
-from ..views import BoardRenderer
 
 
 app = typer.Typer(name='board', help='Manage boards.', no_args_is_help=True)
@@ -42,7 +42,7 @@ def add(name: Annotated[str, typer.Argument(help='Board name.')]):
         board = service.create_board(name)
         session.commit()
 
-        success(f'Created board "{board.name}" ({board.id}).')
+        console.print(MessageRenderer.success(f'Created board "{board.name}".'))
 
 
 @app.command(help='Rename a board.')
@@ -59,9 +59,10 @@ def rename(id: Annotated[int, typer.Argument(help='Board ID.')],
             board = service.rename_board(id, name)
             session.commit()
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
-        success(f'Renamed board to "{board.name}".')
+        console.print(
+            MessageRenderer.success(f'Renamed board to "{board.name}".'))
 
 
 @app.command()
@@ -86,9 +87,9 @@ def rm(id: Annotated[int, typer.Argument(help='Board ID.')],
             board = service.delete_board(id)
             session.commit()
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
-        success(f'Deleted board "{board.name}".')
+        console.print(MessageRenderer.success(f'Deleted board "{board.name}".'))
 
 
 @app.command()
@@ -103,7 +104,7 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
         try:
             board = service.get_board(id)
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
         console.print(BoardRenderer.to_kanban(board))
 
@@ -130,6 +131,6 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
             board = service.clean_completed_tasks(id)
             session.commit()
         except BoardNotFoundError:
-            return error('Board not found.')
+            return console.print(MessageRenderer.error('Board not found.'))
 
         console.print(BoardRenderer.to_kanban(board))

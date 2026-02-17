@@ -3,10 +3,10 @@ import typer
 
 from ..console import console
 from ..db.engine import engine
+from ..renderers.board_renderer import BoardRenderer
 from ..repos.board_repo import BoardRepository
 from ..repos.task_repo import TaskRepository
 from ..services.task_service import TaskService
-from ..views import BoardRenderer
 
 
 app = typer.Typer()

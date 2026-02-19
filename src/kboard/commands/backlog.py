@@ -28,4 +28,5 @@ def backlog():
 
         tasks = service.get_backlog()
 
+        console.clear()
         console.print(BoardRenderer.kanban_from_tasks('Backlog', list(tasks)))

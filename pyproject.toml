@@ -1,6 +1,6 @@
 [project]
 name = "kboard"
-version = "0.3.0"
+version = "0.4.0"
 description = "Console-based Kanban task manager created in Python."
 authors = [
     {name = "Óscar Miranda", email = "oscarmiranda3615@gmail.com"}

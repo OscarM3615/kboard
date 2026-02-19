@@ -94,6 +94,7 @@ def all():
 
         boards = service.list_boards()
 
+        console.clear()
         console.print(BoardRenderer.to_kanban_swimlanes(boards))
 
 
@@ -111,6 +112,7 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
+        console.clear()
         console.print(BoardRenderer.to_kanban(board))
 
 
@@ -138,4 +140,5 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
+        console.clear()
         console.print(BoardRenderer.to_kanban(board))

@@ -43,7 +43,7 @@ class BoardRenderer:
         return table
 
     @staticmethod
-    def _group_tasks_by_status(tasks: list[Task]) -> dict[Status, list[Task]]:
+    def _group_tasks_by_status(tasks: Sequence[Task]) -> dict[Status, list[Task]]:
         """Return the tasks grouped by status.
 
         :param tasks: list of tasks to group
@@ -99,7 +99,7 @@ class BoardRenderer:
         return table
 
     @classmethod
-    def kanban_from_tasks(cls, title: str, tasks: list['Task']) -> Table:
+    def kanban_from_tasks(cls, title: str, tasks: Sequence['Task']) -> Table:
         """Generate a rich table to display a Kanban board from a list of tasks.
 
         :param title: table title

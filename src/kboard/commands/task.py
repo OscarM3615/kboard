@@ -48,12 +48,12 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         session.add(task)
         session.commit()
 
+        console.clear()
         if task.board:
             console.print(BoardRenderer.to_kanban(task.board))
         else:
             backlog = service.get_backlog()
-            console.print(BoardRenderer.kanban_from_tasks('Backlog',
-                                                          list(backlog)))
+            console.print(BoardRenderer.kanban_from_tasks('Backlog', backlog))
 
 
 @app.command()
@@ -86,6 +86,7 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
+        console.clear()
         if task.board:
             console.print(BoardRenderer.to_kanban(task.board))
         else:
@@ -118,6 +119,7 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
             return console.print(
                 MessageRenderer.error(f'Unable to move {steps} step(s).'))
 
+        console.clear()
         if task.board:
             console.print(BoardRenderer.to_kanban(task.board))
         else:
@@ -151,6 +153,7 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
 
+        console.clear()
         if board:
             console.print(BoardRenderer.to_kanban(board))
         else:

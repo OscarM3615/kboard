@@ -97,28 +97,6 @@ class BoardRenderer:
 
         return table
 
-    @staticmethod
-    def _inline(board: Board) -> str:
-        """Return board data as a single-line string.
-
-        :param board: board object
-        :return: board data
-        """
-        return (f'\\[[cyan]{board.id}[/]] {board.name}'
-                f' ({board.active_task_count})')
-
-    @classmethod
-    def to_list(cls, boards: Sequence[Board]) -> Panel:
-        """Return a rich panel with a list of boards.
-
-        :param boards: list of boards
-        :return: rich panel
-        """
-        titles = [cls._inline(b) for b in boards]
-
-        return Panel(Group(*titles), title='Boards', title_align='left',
-                     border_style='blue')
-
     @classmethod
     def kanban_from_tasks(cls, title: str, tasks: list['Task']) -> Table:
         """Generate a rich table to display a Kanban board from a list of tasks.

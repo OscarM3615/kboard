@@ -26,12 +26,6 @@ class Board(Base):
                                                cascade='all, delete',
                                                passive_deletes=True)
 
-    @property
-    def active_task_count(self) -> int:
-        """Count of the tasks in the board that are not completed yet.
-        """
-        return sum(1 for t in self.tasks if t.status != Status.COMPLETED)
-
 
 class Task(Base):
     """Unit of work that can be moved across a board.

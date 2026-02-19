@@ -20,20 +20,6 @@ app = typer.Typer(name='board', help='Manage boards.', no_args_is_help=True)
 
 
 @app.command()
-def ls():
-    """List existing boards.
-    """
-    with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
-
-        boards = service.list_boards()
-
-        console.print(BoardRenderer.to_list(boards))
-
-
-@app.command()
 def add(name: Annotated[str, typer.Argument(help='Board name.')]):
     """Create a new board.
     """
@@ -98,25 +84,30 @@ def rm(id: Annotated[int, typer.Argument(help='Board ID.')],
 
 
 @app.command()
-def show(board_id: Annotated[int | None, typer.Option(
-        '--board', '-b', help='Board ID.')] = None):
-    """Display board and its tasks.
-
-    If no board ID is specified, the app will display all existing boards
-    separated by swimlanes, otherwise only the selected board will be
-    displayed.
+def all():
+    """Display all boards in a single table.
     """
     with Session(engine) as session:
         board_repo = BoardRepository(session)
         tasks_repo = TaskRepository(session)
         service = BoardService(board_repo, tasks_repo)
 
-        if board_id is None:
-            boards = service.list_boards()
-            return console.print(BoardRenderer.to_kanban_swimlanes(boards))
+        boards = service.list_boards()
+
+        console.print(BoardRenderer.to_kanban_swimlanes(boards))
+
+
+@app.command()
+def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
+    """Display board and its tasks.
+    """
+    with Session(engine) as session:
+        board_repo = BoardRepository(session)
+        tasks_repo = TaskRepository(session)
+        service = BoardService(board_repo, tasks_repo)
 
         try:
-            board = service.get_board(board_id)
+            board = service.get_board(id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 

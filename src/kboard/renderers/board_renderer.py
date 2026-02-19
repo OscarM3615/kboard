@@ -65,7 +65,7 @@ class BoardRenderer:
         """
         statuses = cls._group_tasks_by_status(board.tasks)
 
-        table = cls._create_base_table(board.name)
+        table = cls._create_base_table(f'\\[{board.id}] {board.name}')
 
         table.add_row(*[
             Group(*(TaskRenderer.to_panel(t) for t in statuses[s]))
@@ -88,7 +88,8 @@ class BoardRenderer:
             statuses = cls._group_tasks_by_status(board.tasks)
 
             table.add_row(
-                Text(f'\n{board.name}', style='cyan', no_wrap=True),
+                Text(f'\n[{board.id}] {board.name}', style='cyan',
+                     no_wrap=True),
                 *[
                     Group(*(TaskRenderer.to_panel(t) for t in statuses[s]))
                     for s in Status

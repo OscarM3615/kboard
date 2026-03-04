@@ -13,6 +13,16 @@ class Base(DeclarativeBase):
     ...
 
 
+class AppConfig(Base):
+    """Stores app level config and UI state.
+    """
+
+    __tablename__ = 'app_config'
+
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[str | None]
+
+
 class Board(Base):
     """Container for multiple tasks that represents a Kanban board.
     """

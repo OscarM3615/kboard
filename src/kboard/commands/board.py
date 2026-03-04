@@ -12,8 +12,12 @@ from ..exceptions import BoardNotFoundError
 from ..renderers.board_renderer import BoardRenderer
 from ..renderers.message_renderer import MessageRenderer
 from ..repos.board_repo import BoardRepository
+from ..repos.config_repo import ConfigRepository
 from ..repos.task_repo import TaskRepository
 from ..services.board_service import BoardService
+from ..services.config_service import ConfigService
+from ..services.display_service import DisplayService
+from ..services.task_service import TaskService
 
 
 app = typer.Typer(name='board', help='Manage boards.', no_args_is_help=True)
@@ -90,9 +94,13 @@ def all():
     with Session(engine) as session:
         board_repo = BoardRepository(session)
         tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        config_repo = ConfigRepository(session)
 
-        boards = service.list_boards()
+        board_service = BoardService(board_repo, tasks_repo)
+        config_service = ConfigService(config_repo)
+
+        config_service.set_last_view_all()
+        boards = board_service.list_boards()
 
         console.clear()
         console.print(BoardRenderer.to_kanban_swimlanes(boards))
@@ -105,12 +113,17 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
     with Session(engine) as session:
         board_repo = BoardRepository(session)
         tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        config_repo = ConfigRepository(session)
+
+        board_service = BoardService(board_repo, tasks_repo)
+        config_service = ConfigService(config_repo)
 
         try:
-            board = service.get_board(id)
+            board = board_service.get_board(id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
+
+        config_service.set_last_view_board()
 
         console.clear()
         console.print(BoardRenderer.to_kanban(board))
@@ -132,13 +145,19 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
     with Session(engine) as session:
         board_repo = BoardRepository(session)
         tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        config_repo = ConfigRepository(session)
+
+        board_service = BoardService(board_repo, tasks_repo)
+        task_service = TaskService(tasks_repo, board_repo)
+        config_service = ConfigService(config_repo)
+        display_service = DisplayService(config_service, board_service,
+                                         task_service, BoardRenderer())
 
         try:
-            board = service.clean_completed_tasks(id)
+            board = board_service.clean_completed_tasks(id)
             session.commit()
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
         console.clear()
-        console.print(BoardRenderer.to_kanban(board))
+        console.print(display_service.get_ui_renderable(board))

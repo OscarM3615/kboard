@@ -14,7 +14,11 @@ from ..models import Priority
 from ..renderers.message_renderer import MessageRenderer
 from ..renderers.board_renderer import BoardRenderer
 from ..repos.board_repo import BoardRepository
+from ..repos.config_repo import ConfigRepository
 from ..repos.task_repo import TaskRepository
+from ..services.board_service import BoardService
+from ..services.config_service import ConfigService
+from ..services.display_service import DisplayService
 from ..services.task_service import TaskService
 
 
@@ -38,10 +42,17 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
     with Session(engine) as session:
         task_repo = TaskRepository(session)
         board_repo = BoardRepository(session)
-        service = TaskService(task_repo, board_repo)
+        config_repo = ConfigRepository(session)
+
+        task_service = TaskService(task_repo, board_repo)
+        board_service = BoardService(board_repo, task_repo)
+        config_service = ConfigService(config_repo)
+        display_service = DisplayService(config_service, board_service,
+                                         task_service, BoardRenderer())
 
         try:
-            task = service.add_task(title, priority, tag, due_date, board_id)
+            task = task_service.add_task(
+                title, priority, tag, due_date, board_id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
@@ -49,11 +60,7 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         session.commit()
 
         console.clear()
-        if task.board:
-            console.print(BoardRenderer.to_kanban(task.board))
-        else:
-            backlog = service.get_backlog()
-            console.print(BoardRenderer.kanban_from_tasks('Backlog', backlog))
+        console.print(display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -75,11 +82,17 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
     with Session(engine) as session:
         task_repo = TaskRepository(session)
         board_repo = BoardRepository(session)
-        service = TaskService(task_repo, board_repo)
+        config_repo = ConfigRepository(session)
+
+        task_service = TaskService(task_repo, board_repo)
+        board_service = BoardService(board_repo, task_repo)
+        config_service = ConfigService(config_repo)
+        display_service = DisplayService(config_service, board_service,
+                                         task_service, BoardRenderer())
 
         try:
-            task = service.edit_task(id, title, priority, tag, due_date,
-                                     board_id)
+            task = task_service.edit_task(id, title, priority, tag, due_date,
+                                          board_id)
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
@@ -87,12 +100,7 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
             return console.print(MessageRenderer.error('Board not found.'))
 
         console.clear()
-        if task.board:
-            console.print(BoardRenderer.to_kanban(task.board))
-        else:
-            backlog = service.get_backlog()
-            console.print(BoardRenderer.kanban_from_tasks('Backlog',
-                                                          list(backlog)))
+        console.print(display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -108,10 +116,16 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
     with Session(engine) as session:
         task_repo = TaskRepository(session)
         board_repo = BoardRepository(session)
-        service = TaskService(task_repo, board_repo)
+        config_repo = ConfigRepository(session)
+
+        task_service = TaskService(task_repo, board_repo)
+        board_service = BoardService(board_repo, task_repo)
+        config_service = ConfigService(config_repo)
+        display_service = DisplayService(config_service, board_service,
+                                         task_service, BoardRenderer())
 
         try:
-            task = service.move_task(id, steps)
+            task = task_service.move_task(id, steps)
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
@@ -120,12 +134,7 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
                 MessageRenderer.error(f'Unable to move {steps} step(s).'))
 
         console.clear()
-        if task.board:
-            console.print(BoardRenderer.to_kanban(task.board))
-        else:
-            backlog = service.get_backlog()
-            console.print(BoardRenderer.kanban_from_tasks('Backlog',
-                                                          list(backlog)))
+        console.print(display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -144,19 +153,20 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
     with Session(engine) as session:
         task_repo = TaskRepository(session)
         board_repo = BoardRepository(session)
-        service = TaskService(task_repo, board_repo)
+        config_repo = ConfigRepository(session)
+
+        task_service = TaskService(task_repo, board_repo)
+        board_service = BoardService(board_repo, task_repo)
+        config_service = ConfigService(config_repo)
+        display_service = DisplayService(config_service, board_service,
+                                         task_service, BoardRenderer())
 
         try:
-            task = service.delete_task(id)
+            task = task_service.delete_task(id)
             board = task.board
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
 
         console.clear()
-        if board:
-            console.print(BoardRenderer.to_kanban(board))
-        else:
-            backlog = service.get_backlog()
-            console.print(BoardRenderer.kanban_from_tasks('Backlog',
-                                                          list(backlog)))
+        console.print(display_service.get_ui_renderable(board))

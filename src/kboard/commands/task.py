@@ -7,19 +7,19 @@ from typing import Annotated
 import typer
 from sqlalchemy.orm import Session
 
+from ..board.renderer import BoardRenderer
+from ..board.repository import BoardRepository
+from ..board.service import BoardService
+from ..common.message_renderer import MessageRenderer
+from ..common.display_service import DisplayService
+from ..config.repository import ConfigRepository
+from ..config.service import ConfigService
 from ..console import console
 from ..db.engine import engine
 from ..exceptions import BoardNotFoundError, TaskNotFoundError
 from ..models import Priority
-from ..renderers.message_renderer import MessageRenderer
-from ..renderers.board_renderer import BoardRenderer
-from ..repos.board_repo import BoardRepository
-from ..repos.config_repo import ConfigRepository
-from ..repos.task_repo import TaskRepository
-from ..services.board_service import BoardService
-from ..services.config_service import ConfigService
-from ..services.display_service import DisplayService
-from ..services.task_service import TaskService
+from ..task.repository import TaskRepository
+from ..task.service import TaskService
 
 
 app = typer.Typer(name='task', help='Manage tasks.', no_args_is_help=True)

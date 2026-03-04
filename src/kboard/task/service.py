@@ -3,11 +3,11 @@
 
 from datetime import datetime
 
+from .repository import TaskRepository
 from ..exceptions import BoardNotFoundError, TaskNotFoundError
 from ..enums import Priority, Status
 from ..models import Task
-from ..repos.board_repo import BoardRepository
-from ..repos.task_repo import TaskRepository
+from ..board.repository import BoardRepository
 
 
 class TaskService:

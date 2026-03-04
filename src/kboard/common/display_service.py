@@ -3,11 +3,11 @@
 
 from rich.console import RenderableType
 
+from ..board.renderer import BoardRenderer
+from ..board.service import BoardService
+from ..config.service import ConfigService
 from ..models import Board
-from ..renderers.board_renderer import BoardRenderer
-from ..services.board_service import BoardService
-from ..services.config_service import ConfigService
-from ..services.task_service import TaskService
+from ..task.service import TaskService
 
 
 class DisplayService:

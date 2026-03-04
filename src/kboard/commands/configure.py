@@ -3,9 +3,9 @@
 
 import typer
 
+from ..common.message_renderer import MessageRenderer
 from ..console import console
 from ..db.init import init_db
-from ..renderers.message_renderer import MessageRenderer
 
 
 app = typer.Typer()

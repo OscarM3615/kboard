@@ -4,12 +4,12 @@
 from sqlalchemy.orm import Session
 import typer
 
+from ..board.renderer import BoardRenderer
+from ..board.repository import BoardRepository
 from ..console import console
 from ..db.engine import engine
-from ..renderers.board_renderer import BoardRenderer
-from ..repos.board_repo import BoardRepository
-from ..repos.task_repo import TaskRepository
-from ..services.task_service import TaskService
+from ..task.repository import TaskRepository
+from ..task.service import TaskService
 
 
 app = typer.Typer()

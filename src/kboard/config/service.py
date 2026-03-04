@@ -1,8 +1,7 @@
 """This module exports the service class for the Task model.
 """
 
-
-from ..repos.config_repo import ConfigRepository
+from .repository import ConfigRepository
 
 
 class ConfigService:

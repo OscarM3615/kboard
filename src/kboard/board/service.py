@@ -3,10 +3,10 @@
 
 from collections.abc import Sequence
 
+from .repository import BoardRepository
 from ..exceptions import BoardNotFoundError
 from ..models import Board
-from ..repos.board_repo import BoardRepository
-from ..repos.task_repo import TaskRepository
+from ..task.repository import TaskRepository
 
 
 class BoardService:

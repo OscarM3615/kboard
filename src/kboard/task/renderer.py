@@ -5,7 +5,7 @@ from datetime import date
 
 from rich.panel import Panel
 
-from ..config import STATUS_COLOURS
+from ..settings import STATUS_COLOURS
 from ..enums import Priority, Status
 from ..models import Task
 

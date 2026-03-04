@@ -7,17 +7,11 @@ import typer
 from sqlalchemy.orm import Session
 
 from ..board.renderer import BoardRenderer
-from ..board.repository import BoardRepository
-from ..board.service import BoardService
 from ..common.message_renderer import MessageRenderer
-from ..common.display_service import DisplayService
-from ..config.repository import ConfigRepository
-from ..config.service import ConfigService
 from ..console import console
+from ..container import Container
 from ..db.engine import engine
 from ..exceptions import BoardNotFoundError
-from ..task.repository import TaskRepository
-from ..task.service import TaskService
 
 
 app = typer.Typer(name='board', help='Manage boards.', no_args_is_help=True)
@@ -28,11 +22,9 @@ def add(name: Annotated[str, typer.Argument(help='Board name.')]):
     """Create a new board.
     """
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        container = Container(session)
 
-        board = service.create_board(name)
+        board = container.board_service.create_board(name)
         session.commit()
 
         console.print(MessageRenderer.success(
@@ -45,12 +37,10 @@ def rename(id: Annotated[int, typer.Argument(help='Board ID.')],
     """Rename a board.
     """
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        container = Container(session)
 
         try:
-            board = service.rename_board(id, name)
+            board = container.board_service.rename_board(id, name)
             session.commit()
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
@@ -73,12 +63,10 @@ def rm(id: Annotated[int, typer.Argument(help='Board ID.')],
         return
 
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        service = BoardService(board_repo, tasks_repo)
+        container = Container(session)
 
         try:
-            board = service.delete_board(id)
+            board = container.board_service.delete_board(id)
             session.commit()
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
@@ -92,15 +80,10 @@ def all():
     """Display all boards in a single table.
     """
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        config_repo = ConfigRepository(session)
+        container = Container(session)
 
-        board_service = BoardService(board_repo, tasks_repo)
-        config_service = ConfigService(config_repo)
-
-        config_service.set_last_view_all()
-        boards = board_service.list_boards()
+        container.config_service.set_last_view_all()
+        boards = container.board_service.list_boards()
 
         console.clear()
         console.print(BoardRenderer.to_kanban_swimlanes(boards))
@@ -111,19 +94,14 @@ def show(id: Annotated[int, typer.Argument(help='Board ID.')]):
     """Display board and its tasks.
     """
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        config_repo = ConfigRepository(session)
-
-        board_service = BoardService(board_repo, tasks_repo)
-        config_service = ConfigService(config_repo)
+        container = Container(session)
 
         try:
-            board = board_service.get_board(id)
+            board = container.board_service.get_board(id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
-        config_service.set_last_view_board()
+        container.config_service.set_last_view_board()
 
         console.clear()
         console.print(BoardRenderer.to_kanban(board))
@@ -143,21 +121,13 @@ def clean(id: Annotated[int, typer.Argument(help='Board ID.')],
         return
 
     with Session(engine) as session:
-        board_repo = BoardRepository(session)
-        tasks_repo = TaskRepository(session)
-        config_repo = ConfigRepository(session)
-
-        board_service = BoardService(board_repo, tasks_repo)
-        task_service = TaskService(tasks_repo, board_repo)
-        config_service = ConfigService(config_repo)
-        display_service = DisplayService(config_service, board_service,
-                                         task_service, BoardRenderer())
+        container = Container(session)
 
         try:
-            board = board_service.clean_completed_tasks(id)
+            board = container.board_service.clean_completed_tasks(id)
             session.commit()
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
 
         console.clear()
-        console.print(display_service.get_ui_renderable(board))
+        console.print(container.display_service.get_ui_renderable(board))

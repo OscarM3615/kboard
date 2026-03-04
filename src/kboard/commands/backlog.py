@@ -5,11 +5,9 @@ from sqlalchemy.orm import Session
 import typer
 
 from ..board.renderer import BoardRenderer
-from ..board.repository import BoardRepository
 from ..console import console
+from ..container import Container
 from ..db.engine import engine
-from ..task.repository import TaskRepository
-from ..task.service import TaskService
 
 
 app = typer.Typer()
@@ -22,11 +20,9 @@ def backlog():
     The backlog is composed of tasks with no assigned board.
     """
     with Session(engine) as session:
-        task_repo = TaskRepository(session)
-        board_repo = BoardRepository(session)
-        service = TaskService(task_repo, board_repo)
+        container = Container(session)
 
-        tasks = service.get_backlog()
+        tasks = container.task_service.get_backlog()
 
         console.clear()
         console.print(BoardRenderer.kanban_from_tasks('Backlog', list(tasks)))

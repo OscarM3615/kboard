@@ -7,19 +7,12 @@ from typing import Annotated
 import typer
 from sqlalchemy.orm import Session
 
-from ..board.renderer import BoardRenderer
-from ..board.repository import BoardRepository
-from ..board.service import BoardService
 from ..common.message_renderer import MessageRenderer
-from ..common.display_service import DisplayService
-from ..config.repository import ConfigRepository
-from ..config.service import ConfigService
 from ..console import console
+from ..container import Container
 from ..db.engine import engine
 from ..exceptions import BoardNotFoundError, TaskNotFoundError
 from ..models import Priority
-from ..task.repository import TaskRepository
-from ..task.service import TaskService
 
 
 app = typer.Typer(name='task', help='Manage tasks.', no_args_is_help=True)
@@ -40,18 +33,10 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
     The task can be preassigned to a board using the --board option.
     """
     with Session(engine) as session:
-        task_repo = TaskRepository(session)
-        board_repo = BoardRepository(session)
-        config_repo = ConfigRepository(session)
-
-        task_service = TaskService(task_repo, board_repo)
-        board_service = BoardService(board_repo, task_repo)
-        config_service = ConfigService(config_repo)
-        display_service = DisplayService(config_service, board_service,
-                                         task_service, BoardRenderer())
+        container = Container(session)
 
         try:
-            task = task_service.add_task(
+            task = container.task_service.add_task(
                 title, priority, tag, due_date, board_id)
         except BoardNotFoundError:
             return console.print(MessageRenderer.error('Board not found.'))
@@ -60,7 +45,7 @@ def add(title: Annotated[str, typer.Argument(help='Task title.')],
         session.commit()
 
         console.clear()
-        console.print(display_service.get_ui_renderable(task.board))
+        console.print(container.display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -80,19 +65,11 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
     All parameters and options from the `add` command are optional here.
     """
     with Session(engine) as session:
-        task_repo = TaskRepository(session)
-        board_repo = BoardRepository(session)
-        config_repo = ConfigRepository(session)
-
-        task_service = TaskService(task_repo, board_repo)
-        board_service = BoardService(board_repo, task_repo)
-        config_service = ConfigService(config_repo)
-        display_service = DisplayService(config_service, board_service,
-                                         task_service, BoardRenderer())
+        container = Container(session)
 
         try:
-            task = task_service.edit_task(id, title, priority, tag, due_date,
-                                          board_id)
+            task = container.task_service.edit_task(id, title, priority, tag,
+                                                    due_date, board_id)
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
@@ -100,7 +77,7 @@ def edit(id: Annotated[int, typer.Argument(help='Task ID.')],
             return console.print(MessageRenderer.error('Board not found.'))
 
         console.clear()
-        console.print(display_service.get_ui_renderable(task.board))
+        console.print(container.display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -114,18 +91,10 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
     To move a task backwards the steps must be negative.
     """
     with Session(engine) as session:
-        task_repo = TaskRepository(session)
-        board_repo = BoardRepository(session)
-        config_repo = ConfigRepository(session)
-
-        task_service = TaskService(task_repo, board_repo)
-        board_service = BoardService(board_repo, task_repo)
-        config_service = ConfigService(config_repo)
-        display_service = DisplayService(config_service, board_service,
-                                         task_service, BoardRenderer())
+        container = Container(session)
 
         try:
-            task = task_service.move_task(id, steps)
+            task = container.task_service.move_task(id, steps)
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
@@ -134,7 +103,7 @@ def mv(id: Annotated[int, typer.Argument(help='Task ID.')],
                 MessageRenderer.error(f'Unable to move {steps} step(s).'))
 
         console.clear()
-        console.print(display_service.get_ui_renderable(task.board))
+        console.print(container.display_service.get_ui_renderable(task.board))
 
 
 @app.command()
@@ -151,22 +120,14 @@ def rm(id: Annotated[int, typer.Argument(help='Task ID.')],
         return
 
     with Session(engine) as session:
-        task_repo = TaskRepository(session)
-        board_repo = BoardRepository(session)
-        config_repo = ConfigRepository(session)
-
-        task_service = TaskService(task_repo, board_repo)
-        board_service = BoardService(board_repo, task_repo)
-        config_service = ConfigService(config_repo)
-        display_service = DisplayService(config_service, board_service,
-                                         task_service, BoardRenderer())
+        container = Container(session)
 
         try:
-            task = task_service.delete_task(id)
+            task = container.task_service.delete_task(id)
             board = task.board
             session.commit()
         except TaskNotFoundError:
             return console.print(MessageRenderer.error('Task not found.'))
 
         console.clear()
-        console.print(display_service.get_ui_renderable(board))
+        console.print(container.display_service.get_ui_renderable(board))
